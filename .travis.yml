@@ -1,0 +1,40 @@
+language: cpp
+os: osx
+
+matrix:
+  fast_finish: true
+  include:
+    - name: osx clang
+      compiler: clang
+    - name: osx gcc
+      compiler: gcc
+      addons:
+        homebrew:
+          packages:
+            - gcc@7
+          update: true
+
+before_install:
+  # Setting environement
+  - |
+    if [[ "$TRAVIS_COMPILER" == "gcc" ]]; then
+        export CC=gcc-7
+        export CXX=g++-7
+    fi
+  - $CC --version
+  - $CXX --version
+  - cd $TRAVIS_BUILD_DIR
+  - pip3 install -r requirements.txt
+
+script:
+  - cd $TRAVIS_BUILD_DIR
+  - mkdir build && cd build
+  - |
+    cmake -DBUILD_BINDINGS=ON -DBUILD_TESTS=ON \
+          -DBUILD_EXAMPLES=ON -DBUILD_PROFILES=ON \
+          -DBUILD_BENCHMARKS=ON -DRUN_BENCHMARKS_FLAGS=--benchmark_min_time=0.01 \
+          -DCPPLINT=CPPLINT-NOTFOUND \
+          -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX ..
+  - cat third-party/wigxjpf-download/build-error.log
+  - make -j2
+  - ctest --output-on-failure
